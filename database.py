@@ -105,6 +105,8 @@ def init_database():
             start_time TIMESTAMP,
             end_time TIMESTAMP,
             actual_duration_minutes INTEGER,
+            source TEXT DEFAULT 'прямой',
+            payment_status TEXT DEFAULT 'не оплачен',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (client_id) REFERENCES clients (id),
@@ -157,6 +159,22 @@ def init_database():
     try:
         cursor.execute("ALTER TABLE users ADD COLUMN last_login TIMESTAMP")
         print("✅ Добавлена колонка last_login в таблицу users")
+    except sqlite3.OperationalError:
+        # Колонка уже существует
+        pass
+    
+    # Миграция: добавление колонки source в appointments если её нет
+    try:
+        cursor.execute("ALTER TABLE appointments ADD COLUMN source TEXT DEFAULT 'прямой'")
+        print("✅ Добавлена колонка source в таблицу appointments")
+    except sqlite3.OperationalError:
+        # Колонка уже существует
+        pass
+    
+    # Миграция: добавление колонки payment_status в appointments если её нет
+    try:
+        cursor.execute("ALTER TABLE appointments ADD COLUMN payment_status TEXT DEFAULT 'не оплачен'")
+        print("✅ Добавлена колонка payment_status в таблицу appointments")
     except sqlite3.OperationalError:
         # Колонка уже существует
         pass
