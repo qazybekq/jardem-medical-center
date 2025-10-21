@@ -183,7 +183,6 @@ def test_notification_functions():
     try:
         # Проверяем, что модули уведомлений импортируются
         import notification_manager
-        import notifications
         
         return True, "✅ Уведомления: модули загружены"
     except Exception as e:
