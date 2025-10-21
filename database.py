@@ -129,6 +129,19 @@ def init_database():
         )
     ''')
     
+    # Таблица платежей за услуги в приемах
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS appointment_service_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            appointment_service_id INTEGER NOT NULL,
+            payment_method TEXT NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            notes TEXT,
+            FOREIGN KEY (appointment_service_id) REFERENCES appointment_services (id) ON DELETE CASCADE
+        )
+    ''')
+    
     # Таблица аудита действий
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS audit_log (

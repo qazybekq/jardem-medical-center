@@ -39,6 +39,20 @@ def migrate_database():
         else:
             print("✅ Колонка payment_status уже существует")
         
+        # Создаем таблицу appointment_service_payments если её нет
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS appointment_service_payments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                appointment_service_id INTEGER NOT NULL,
+                payment_method TEXT NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                notes TEXT,
+                FOREIGN KEY (appointment_service_id) REFERENCES appointment_services (id) ON DELETE CASCADE
+            )
+        ''')
+        print("✅ Таблица appointment_service_payments создана/проверена")
+        
         # Обновляем существующие записи
         print("🔄 Обновляем существующие записи...")
         cursor.execute("UPDATE appointments SET source = 'прямой' WHERE source IS NULL")
