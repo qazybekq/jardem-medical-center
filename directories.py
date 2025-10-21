@@ -90,7 +90,9 @@ def show_client_form(is_edit=False, client_id=None):
             birth_date = st.date_input(
                 "Дата рождения",
                 value=datetime.strptime(client_data[3], '%Y-%m-%d').date() if client_data and client_data[3] else None,
-                help="Необязательное поле"
+                min_value=datetime(1910, 1, 1).date(),
+                max_value=datetime.now().date(),
+                help="Выберите дату рождения (1910-2025)"
             )
 
         email = st.text_input(

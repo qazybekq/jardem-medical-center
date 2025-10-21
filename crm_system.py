@@ -112,7 +112,13 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
             with st.form("create_client_form"):
                 new_first_name = st.text_input("Имя:", key="new_first_name")
                 new_last_name = st.text_input("Фамилия:", key="new_last_name")
-                new_birth_date = st.date_input("Дата рождения:", key="new_birth_date")
+                new_birth_date = st.date_input(
+                    "Дата рождения:", 
+                    key="new_birth_date",
+                    min_value=datetime(1910, 1, 1).date(),
+                    max_value=datetime.now().date(),
+                    help="Выберите дату рождения (1910-2025)"
+                )
                 new_phone = st.text_input("Телефон:", key="new_phone")
                 new_email = st.text_input("Email (необязательно):", key="new_email")
                 
