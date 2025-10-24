@@ -195,7 +195,7 @@ def init_database():
     
     # Миграция: добавление колонки updated_at в users если её нет
     try:
-        cursor.execute("ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        cursor.execute("ALTER TABLE users ADD COLUMN updated_at TIMESTAMP")
         print("✅ Добавлена колонка updated_at в таблицу users")
     except sqlite3.OperationalError:
         # Колонка уже существует
