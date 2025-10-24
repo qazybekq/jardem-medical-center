@@ -507,100 +507,83 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
             if remaining > 0:
                 st.markdown("**Добавить оплату:**")
                 
-                with st.form("add_payment_form"):
-                    col_pm1, col_pm2 = st.columns([2, 2])
+                # Выбор методов оплаты (вне формы для динамического обновления)
+                payment_methods = st.multiselect(
+                    "Выберите методы оплаты:",
+                    ["Kaspi QR", "Карта", "Наличные", "Перевод"],
+                    default=["Kaspi QR"],
+                    key="payment_methods_select"
+                )
+                
+                # Суммы для каждого метода (вне формы)
+                payment_amounts = {}
+                total_payment_input = 0.0
+                
+                if payment_methods:
+                    st.markdown("**Укажите суммы:**")
                     
-                    with col_pm1:
-                        # Выбор методов оплаты
-                        payment_methods = st.multiselect(
-                            "Выберите методы оплаты:",
-                            ["Kaspi QR", "Карта", "Наличные", "Перевод"],
-                            default=["Kaspi QR"],
-                            key="payment_methods_select"
-                        )
-                    
-                    with col_pm2:
-                        st.write("") # Пустое место для выравнивания
-                    
-                    # Суммы для каждого метода
-                    payment_amounts = {}
-                    total_payment_input = 0.0
-                    
-                    if payment_methods:
-                        st.markdown("**Укажите суммы:**")
-                        
-                        cols = st.columns(len(payment_methods))
-                        for idx, method in enumerate(payment_methods):
-                            with cols[idx]:
-                                method_icon = {
-                                    "Карта": "💳",
-                                    "Наличные": "💵",
-                                    "Kaspi QR": "📱",
-                                    "Перевод": "💸"
-                                }.get(method, "💰")
-                                
-                                # Если только один метод, предлагаем полную сумму
-                                default_amount = remaining if len(payment_methods) == 1 else 0.0
-                                
-                                amount = st.number_input(
-                                    f"{method_icon} {method}:",
-                                    min_value=0.0,
-                                    max_value=float(remaining),
-                                    value=float(default_amount),
-                                    step=100.0,
-                                    key=f"payment_amount_{method}"
-                                )
-                                payment_amounts[method] = amount
-                                total_payment_input += amount
-                        
-                        # Показываем итоговую сумму и остаток
-                        col_sum1, col_sum2, col_sum3 = st.columns(3)
-                        with col_sum1:
-                            st.info(f"**Итого к оплате:** {total_payment_input:,.0f} ₸")
-                        with col_sum2:
-                            if total_payment_input < remaining:
-                                st.warning(f"**Осталось:** {remaining - total_payment_input:,.0f} ₸")
-                            elif total_payment_input == remaining:
-                                st.success("✅ **Полная оплата**")
-                            else:
-                                st.error(f"⚠️ **Переплата:** {total_payment_input - remaining:,.0f} ₸")
-                    else:
-                        st.warning("⚠️ Выберите хотя бы один метод оплаты")
-                    
-                    # Кнопка сохранения (ВСЕГДА должна быть в форме!)
-                    if st.form_submit_button("💾 Сохранить оплату", use_container_width=True):
-                        if not payment_methods:
-                            st.error("❌ Выберите хотя бы один метод оплаты")
-                        elif total_payment_input > remaining:
-                            st.error("❌ Сумма оплаты превышает остаток!")
-                        elif total_payment_input == 0:
-                            st.warning("⚠️ Укажите сумму оплаты")
-                        else:
-                            # Пропорциональное распределение по услугам
-                            success = True
-                            payments_created = 0
+                    cols = st.columns(len(payment_methods))
+                    for idx, method in enumerate(payment_methods):
+                        with cols[idx]:
+                            # Если только один метод, предлагаем полную сумму
+                            default_amount = remaining if len(payment_methods) == 1 else 0.0
                             
+                            amount = st.number_input(
+                                f"{method}:",
+                                min_value=0.0,
+                                max_value=float(remaining),
+                                value=float(default_amount),
+                                step=100.0,
+                                key=f"payment_amount_{method}"
+                            )
+                            payment_amounts[method] = amount
+                            total_payment_input += amount
+                
+                # Показываем итоговую сумму и остаток
+                if payment_methods:
+                    col_sum1, col_sum2, col_sum3 = st.columns(3)
+                    with col_sum1:
+                        st.info(f"**Итого к оплате:** {total_payment_input:,.0f} ₸")
+                    with col_sum2:
+                        if total_payment_input < remaining:
+                            st.warning(f"**Осталось:** {remaining - total_payment_input:,.0f} ₸")
+                        elif total_payment_input == remaining:
+                            st.success("**Полная оплата**")
+                        else:
+                            st.error(f"**Переплата:** {total_payment_input - remaining:,.0f} ₸")
+                    with col_sum3:
+                        st.write("")
+                else:
+                    st.warning("Выберите хотя бы один метод оплаты")
+                
+                # Форма для сохранения
+                with st.form("add_payment_form"):
+                    # Кнопка сохранения
+                    if st.form_submit_button("Сохранить оплату", use_container_width=True):
+                        if not payment_methods:
+                            st.error("Выберите хотя бы один метод оплаты")
+                        elif total_payment_input > remaining:
+                            st.error("Сумма оплаты превышает остаток!")
+                        elif total_payment_input == 0:
+                            st.warning("Укажите сумму оплаты")
+                        else:
+                            # Сохраняем платежи для каждой услуги
+                            success_count = 0
                             for service in current_services:
                                 appointment_service_id = service[0]  # ID из таблицы appointment_services
                                 service_price = service[4]  # Фактическая цена услуги
                                 service_proportion = service_price / total_cost
                                 
-                                # Распределяем каждый метод оплаты
+                                # Распределяем каждый метод оплаты пропорционально
                                 for method, total_method_amount in payment_amounts.items():
                                     if total_method_amount > 0:
                                         service_payment_amount = total_method_amount * service_proportion
                                         
-                                        payment_id = add_payment_to_service(appointment_service_id, method, service_payment_amount)
-                                        if payment_id:
-                                            payments_created += 1
-                                        else:
-                                            success = False
-                                            break
-                                
-                                if not success:
-                                    break
+                                        payment_success = add_payment_to_service(appointment_service_id, method, service_payment_amount)
+                                        if payment_success:
+                                            success_count += 1
                             
-                            if success and payments_created > 0:
+                            if success_count > 0:
                                 # Обновляем статус оплаты приема
                                 new_total_paid = total_paid + total_payment_input
                                 
@@ -613,7 +596,7 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
                                     st.session_state['edit_appointment_id'] = appointment_id
                                     
                                     # Успешное сообщение
-                                    st.success(f"✅ Оплата {total_payment_input:,.0f} ₸ успешно добавлена! Новый баланс: {new_total_paid:,.0f} ₸ из {total_cost:,.0f} ₸")
+                                    st.success(f"Оплата {total_payment_input:,.0f} ₸ успешно добавлена! Новый баланс: {new_total_paid:,.0f} ₸ из {total_cost:,.0f} ₸")
                                     
                                     # Перезагружаем страницу для обновления данных
                                     st.rerun()

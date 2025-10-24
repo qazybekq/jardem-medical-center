@@ -169,13 +169,15 @@ def get_analytics_data(start_date, end_date, doctor_ids):
             d.specialization,
             s.name as service_name,
             s.price as service_price,
-            COALESCE(s.price, 0) as total_cost,
+            COALESCE(asp.amount, s.price, 0) as total_cost,
             a.source,
-            'Kaspi QR' as payment_methods
+            COALESCE(asp.payment_method, 'Kaspi QR') as payment_methods
         FROM appointments a
         JOIN clients c ON a.client_id = c.id
         JOIN doctors d ON a.doctor_id = d.id
         JOIN services s ON a.service_id = s.id
+        LEFT JOIN appointment_services aps ON a.id = aps.appointment_id
+        LEFT JOIN appointment_service_payments asp ON aps.id = asp.appointment_service_id
         WHERE a.appointment_date BETWEEN ? AND ?
     '''
     
