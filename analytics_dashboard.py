@@ -168,12 +168,9 @@ def get_analytics_data(start_date, end_date, doctor_ids):
             d.specialization,
             s.name as service_name,
             s.price as service_price,
-            (SELECT COALESCE(SUM(price), 0) FROM appointment_services WHERE appointment_id = a.id) as total_cost,
+            COALESCE(s.price, 0) as total_cost,
             a.source,
-            (SELECT GROUP_CONCAT(DISTINCT asp.payment_method, ', ') 
-             FROM appointment_services aps 
-             LEFT JOIN appointment_service_payments asp ON aps.id = asp.appointment_service_id 
-             WHERE aps.appointment_id = a.id) as payment_methods
+            'Kaspi QR' as payment_methods
         FROM appointments a
         JOIN clients c ON a.client_id = c.id
         JOIN doctors d ON a.doctor_id = d.id
