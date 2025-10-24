@@ -69,7 +69,7 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
     col1, col2 = st.columns(2)
     
     with col1:
-        # Поиск клиента с выпадающим списком
+        # Поиск пациента с выпадающим списком
         if appointment_data:
             client_query = f"{appointment_data[10]} {appointment_data[11]}"
             selected_client_id = appointment_data[1]
@@ -82,33 +82,33 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
             all_clients = cursor.fetchall()
             conn.close()
             
-            client_options = ["-- Выберите клиента или начните печатать --"] + [
+            client_options = ["-- Выберите пациента или начните печатать --"] + [
                 f"{client[1]} {client[2]} ({client[3]})" for client in all_clients
             ]
             client_ids = {f"{client[1]} {client[2]} ({client[3]})": client[0] for client in all_clients}
             
             # Выпадающий список с поиском
             selected_client_option = st.selectbox(
-                "👤 Выберите клиента:",
+                "👤 Выберите пациента:",
                 options=client_options,
                 key="client_select_dropdown",
-                help="Начните печатать для поиска клиента"
+                help="Начните печатать для поиска пациента"
             )
             
-            if selected_client_option != "-- Выберите клиента или начните печатать --":
+            if selected_client_option != "-- Выберите пациента или начните печатать --":
                 selected_client_id = client_ids[selected_client_option]
                 st.session_state['selected_client_id'] = selected_client_id
                 
-                # Показываем выбранного клиента
+                # Показываем выбранного пациента
                 client_data = get_client_by_id(selected_client_id)
                 if client_data:
                     st.success(f"✅ Выбран: {client_data[1]} {client_data[2]} ({client_data[4]})")
             else:
                 selected_client_id = st.session_state.get('selected_client_id')
         
-        # Форма создания нового клиента
+        # Форма создания нового пациента
         if not selected_client_id and not appointment_data:
-            st.markdown("**Создать нового клиента:**")
+            st.markdown("**Создать нового пациента:**")
             with st.form("create_client_form"):
                 new_first_name = st.text_input("Имя *:", key="new_first_name")
                 new_last_name = st.text_input("Фамилия *:", key="new_last_name")
@@ -116,13 +116,13 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
                     "Дата рождения:", 
                     key="new_birth_date",
                     min_value=datetime(1910, 1, 1).date(),
-                    max_value=datetime.now().date(),
+                    max_value=datetime(2025, 12, 31).date(),
                     help="Выберите дату рождения (1910-2025)"
                 )
                 new_phone = st.text_input("Телефон *:", key="new_phone", help="Введите номер без +7 (например: 7011234567)")
                 new_email = st.text_input("Email (необязательно):", key="new_email")
                 
-                if st.form_submit_button("➕ Создать клиента", use_container_width=True):
+                if st.form_submit_button("➕ Создать пациента", use_container_width=True):
                     if new_first_name and new_last_name and new_phone:
                         client_id = create_client(new_first_name, new_last_name, new_birth_date, new_phone, new_email)
                         if client_id:
@@ -130,7 +130,7 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
                             st.session_state['selected_client_id'] = client_id
                             st.rerun()
                         else:
-                            st.error("❌ Ошибка создания клиента (возможно, телефон уже существует)")
+                            st.error("❌ Ошибка создания пациента (возможно, телефон уже существует)")
                     else:
                         st.error("❌ Заполните обязательные поля")
         
@@ -297,7 +297,7 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
                     else:
                         missing = []
                         if not client_id_to_use:
-                            missing.append("клиента")
+                            missing.append("пациента")
                         if not doctor_id_to_use:
                             missing.append("врача")
                         if not service_id_to_use:

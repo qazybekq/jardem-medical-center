@@ -180,7 +180,7 @@ def get_analytics_data(start_date, end_date, doctor_ids):
         WHERE a.appointment_date BETWEEN ? AND ?
         GROUP BY a.id, a.appointment_date, a.appointment_time, a.status, a.actual_duration_minutes,
                  c.first_name, c.last_name, d.first_name, d.last_name, d.specialization,
-                 s.name, s.price, a.source
+                 s.name, s.price, a.source, a.client_id, a.doctor_id, a.service_id
     '''
     
     params = [start_date, end_date]

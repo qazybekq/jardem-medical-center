@@ -91,7 +91,7 @@ def show_client_form(is_edit=False, client_id=None):
                 "Дата рождения",
                 value=datetime.strptime(client_data[3], '%Y-%m-%d').date() if client_data and client_data[3] else None,
                 min_value=datetime(1910, 1, 1).date(),
-                max_value=datetime.now().date(),
+                max_value=datetime(2025, 12, 31).date(),
                 help="Выберите дату рождения (1910-2025)"
             )
 
