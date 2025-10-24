@@ -49,7 +49,9 @@ def login_page():
                     st.rerun()
             
             if login_button:
-                if authenticate_user(username, password):
+                if not username or not password:
+                    st.error("❌ Пожалуйста, заполните все поля")
+                elif authenticate_user(username, password):
                     # Успешный вход - сбрасываем счетчик
                     st.session_state['failed_attempts'] = 0
                     st.session_state['lockout_until'] = None
@@ -59,6 +61,9 @@ def login_page():
                     # Неудачная попытка
                     st.session_state['failed_attempts'] += 1
                     st.session_state['last_attempt_time'] = datetime.now()
+                    
+                    # Показываем понятное сообщение об ошибке
+                    st.error("❌ Неверное имя пользователя или пароль")
                     
                     # Блокировка после 5 неудачных попыток
                     if st.session_state['failed_attempts'] >= 5:

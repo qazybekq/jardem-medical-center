@@ -73,7 +73,7 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
         if appointment_data:
             client_query = f"{appointment_data[10]} {appointment_data[11]}"
             selected_client_id = appointment_data[1]
-            st.info(f"👤 Клиент: {appointment_data[10]} {appointment_data[11]} ({appointment_data[12]})")
+            st.info(f"👤 Пациент: {appointment_data[10]} {appointment_data[11]} ({appointment_data[12]})")
         else:
             # Получаем всех клиентов для выпадающего списка
             conn = get_connection()
@@ -110,8 +110,8 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
         if not selected_client_id and not appointment_data:
             st.markdown("**Создать нового клиента:**")
             with st.form("create_client_form"):
-                new_first_name = st.text_input("Имя:", key="new_first_name")
-                new_last_name = st.text_input("Фамилия:", key="new_last_name")
+                new_first_name = st.text_input("Имя *:", key="new_first_name")
+                new_last_name = st.text_input("Фамилия *:", key="new_last_name")
                 new_birth_date = st.date_input(
                     "Дата рождения:", 
                     key="new_birth_date",
@@ -119,14 +119,14 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
                     max_value=datetime.now().date(),
                     help="Выберите дату рождения (1910-2025)"
                 )
-                new_phone = st.text_input("Телефон:", key="new_phone")
+                new_phone = st.text_input("Телефон *:", key="new_phone", help="Введите номер без +7 (например: 7011234567)")
                 new_email = st.text_input("Email (необязательно):", key="new_email")
                 
                 if st.form_submit_button("➕ Создать клиента", use_container_width=True):
                     if new_first_name and new_last_name and new_phone:
                         client_id = create_client(new_first_name, new_last_name, new_birth_date, new_phone, new_email)
                         if client_id:
-                            st.success("✅ Клиент создан!")
+                            st.success("✅ Пациент создан!")
                             st.session_state['selected_client_id'] = client_id
                             st.rerun()
                         else:
@@ -498,7 +498,7 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
                     method_icon = {
                         "Карта": "💳",
                         "Наличные": "💵",
-                        "QR-код": "📱",
+                        "Kaspi QR": "📱",
                         "Перевод": "💸"
                     }.get(payment[0], "💰")
                     st.write(f"{method_icon} **{payment[0]}:** {payment[1]:,.0f} ₸")
@@ -514,8 +514,8 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
                         # Выбор методов оплаты
                         payment_methods = st.multiselect(
                             "Выберите методы оплаты:",
-                            ["Карта", "Наличные", "QR-код", "Перевод"],
-                            default=["Карта"],
+                            ["Kaspi QR", "Карта", "Наличные", "Перевод"],
+                            default=["Kaspi QR"],
                             key="payment_methods_select"
                         )
                     
@@ -535,7 +535,7 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
                                 method_icon = {
                                     "Карта": "💳",
                                     "Наличные": "💵",
-                                    "QR-код": "📱",
+                                    "Kaspi QR": "📱",
                                     "Перевод": "💸"
                                 }.get(method, "💰")
                                 

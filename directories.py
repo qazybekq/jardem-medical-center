@@ -22,7 +22,7 @@ def main():
     st.markdown("---")
 
     # Подменю для справочников
-    tab1, tab2, tab3 = st.tabs(["👥 Клиенты", "💼 Услуги", "👨‍⚕️ Врачи"])
+    tab1, tab2, tab3 = st.tabs(["👥 Пациенты", "💼 Услуги", "👨‍⚕️ Врачи"])
 
     with tab1:
         show_clients_management()
@@ -77,7 +77,7 @@ def show_client_form(is_edit=False, client_id=None):
             phone = st.text_input(
                 "Телефон *",
                 value=client_data[4] if client_data else "",
-                help="Обязательное поле. Формат: +7 (XXX) XXX-XX-XX"
+                help="Введите номер без +7 (например: 7011234567)"
             )
 
         with col2:
@@ -122,7 +122,7 @@ def show_client_form(is_edit=False, client_id=None):
                     success = add_client(first_name, last_name, birth_date, phone, email)
 
                 if success:
-                    st.success("✅ Клиент успешно сохранен!")
+                    st.success("✅ Пациент успешно сохранен!")
                     st.session_state['show_client_form'] = False
                     st.rerun()
                 else:
@@ -230,7 +230,7 @@ def show_clients_table():
                         st.success(f"✅ Деактивировано клиентов: {len(selected_client_ids)}")
                         st.rerun()
     else:
-        st.info("👤 Клиентов не найдено")
+        st.info("👤 Пациентов не найдено")
 
 def show_services_management():
     """Управление услугами"""
@@ -508,7 +508,7 @@ def show_doctor_form(is_edit=False, doctor_id=None):
             phone = st.text_input(
                 "Телефон *",
                 value=doctor_data[4] if doctor_data else "",
-                help="Обязательное поле. Формат: +7 (XXX) XXX-XX-XX"
+                help="Введите номер без +7 (например: 7011234567)"
             )
 
         email = st.text_input(

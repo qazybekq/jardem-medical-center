@@ -61,7 +61,7 @@ def main():
                 "📥 Импорт данных"
             ]
         elif user_access_level == 'crm':
-            pages = ["🏥 CRM Система"]
+            pages = ["🏥 CRM Система", "📊 Аналитика (сегодня)"]
         else:
             pages = []
             
@@ -85,6 +85,10 @@ def main():
     
     # Роутинг страниц
     if page == "📊 Аналитика":
+        analytics_dashboard.main()
+    elif page == "📊 Аналитика (сегодня)":
+        # Для CRM пользователей показываем аналитику только за сегодня
+        st.session_state['analytics_today_only'] = True
         analytics_dashboard.main()
     elif page == "🏥 CRM Система":
         crm_system.main()

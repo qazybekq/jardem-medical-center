@@ -14,6 +14,13 @@ def main():
     """Главная функция аналитического дашборда"""
     st.title("📊 Аналитический дашборд")
     
+    # Проверяем, если это режим "только сегодня" для CRM пользователей
+    if st.session_state.get('analytics_today_only', False):
+        st.info("📅 Доступна аналитика только за сегодняшний день")
+        st.session_state['quick_filter_start'] = date.today()
+        st.session_state['quick_filter_end'] = date.today()
+        st.session_state['active_quick_filter'] = "today"
+    
     # Быстрые фильтры (над основным контентом)
     st.markdown("### ⚡ Быстрые фильтры:")
     
@@ -162,12 +169,18 @@ def get_analytics_data(start_date, end_date, doctor_ids):
             s.name as service_name,
             s.price as service_price,
             (SELECT COALESCE(SUM(price), 0) FROM appointment_services WHERE appointment_id = a.id) as total_cost,
-            a.source
+            a.source,
+            GROUP_CONCAT(DISTINCT asp.payment_method, ', ') as payment_methods
         FROM appointments a
         JOIN clients c ON a.client_id = c.id
         JOIN doctors d ON a.doctor_id = d.id
         JOIN services s ON a.service_id = s.id
+        LEFT JOIN appointment_services aps ON a.id = aps.appointment_id
+        LEFT JOIN appointment_service_payments asp ON aps.id = asp.appointment_service_id
         WHERE a.appointment_date BETWEEN ? AND ?
+        GROUP BY a.id, a.appointment_date, a.appointment_time, a.status, a.actual_duration_minutes,
+                 c.first_name, c.last_name, d.first_name, d.last_name, d.specialization,
+                 s.name, s.price, a.source
     '''
     
     params = [start_date, end_date]
@@ -338,11 +351,11 @@ def show_detailed_table(df):
     # Форматируем данные для отображения
     display_df = df[[
         'appointment_date', 'appointment_time', 'client_name',
-        'doctor_name', 'service_name', 'total_cost', 'status'
+        'doctor_name', 'service_name', 'total_cost', 'status', 'source', 'payment_methods'
     ]].copy()
     
     display_df.columns = [
-        'Дата', 'Время', 'Пациент', 'Врач', 'Услуга', 'Стоимость', 'Статус'
+        'Дата', 'Время', 'Пациент', 'Врач', 'Услуга', 'Стоимость', 'Статус', 'Источник', 'Методы оплаты'
     ]
     
     # Сортируем по дате
@@ -518,7 +531,7 @@ def show_payment_methods(df):
     method_icons = {
         "Карта": "💳",
         "Наличные": "💵",
-        "QR-код": "📱",
+        "Kaspi QR": "📱",
         "Перевод": "💸"
     }
     

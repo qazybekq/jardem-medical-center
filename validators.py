@@ -42,16 +42,19 @@ def validate_phone(phone):
     # Удаляем пробелы и дефисы
     phone_clean = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
     
-    # Казахстанский формат: +7XXXXXXXXXX или 8XXXXXXXXXX
+    # Казахстанский формат: +7XXXXXXXXXX или 8XXXXXXXXXX или 7XXXXXXXXXX
     pattern_plus7 = r'^\+7\d{10}$'
     pattern_8 = r'^8\d{10}$'
+    pattern_7 = r'^7\d{10}$'
     
-    if not (re.match(pattern_plus7, phone_clean) or re.match(pattern_8, phone_clean)):
-        raise ValidationError("Неверный формат телефона. Используйте: +7XXXXXXXXXX")
+    if not (re.match(pattern_plus7, phone_clean) or re.match(pattern_8, phone_clean) or re.match(pattern_7, phone_clean)):
+        raise ValidationError("Неверный формат телефона. Используйте: 7XXXXXXXXXX (без +7)")
     
-    # Конвертируем 8 в +7
-    if phone_clean.startswith('8'):
-        phone_clean = '+7' + phone_clean[1:]
+    # Конвертируем в формат без +7
+    if phone_clean.startswith('+7'):
+        phone_clean = phone_clean[2:]  # Убираем +7
+    elif phone_clean.startswith('8'):
+        phone_clean = '7' + phone_clean[1:]  # Конвертируем 8 в 7
     
     return phone_clean
 
