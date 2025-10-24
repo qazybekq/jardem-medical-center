@@ -92,9 +92,7 @@ def validate_date(appointment_date):
     today = date.today()
     max_future = today + timedelta(days=365)
     
-    # Проверяем, что дата не в прошлом
-    if appointment_date < today:
-        raise ValidationError("Нельзя создать прием в прошлом")
+    # Убрано ограничение на создание приемов в прошлом
     
     # Проверяем, что дата не слишком далеко в будущем
     if appointment_date > max_future:
