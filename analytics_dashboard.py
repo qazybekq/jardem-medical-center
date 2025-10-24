@@ -15,7 +15,8 @@ def main():
     st.title("📊 Аналитический дашборд")
     
     # Проверяем, если это режим "только сегодня" для CRM пользователей
-    if st.session_state.get('analytics_today_only', False):
+    user_access_level = st.session_state.get('access_level', '')
+    if st.session_state.get('analytics_today_only', False) and user_access_level == 'crm':
         st.info("📅 Доступна аналитика только за сегодняшний день")
         st.session_state['quick_filter_start'] = date.today()
         st.session_state['quick_filter_end'] = date.today()
