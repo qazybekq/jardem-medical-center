@@ -29,6 +29,7 @@ def init_database():
             name TEXT NOT NULL,
             access_level TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_login TIMESTAMP
         )
     ''')
@@ -188,6 +189,14 @@ def init_database():
     try:
         cursor.execute("ALTER TABLE appointments ADD COLUMN payment_status TEXT DEFAULT 'не оплачен'")
         print("✅ Добавлена колонка payment_status в таблицу appointments")
+    except sqlite3.OperationalError:
+        # Колонка уже существует
+        pass
+    
+    # Миграция: добавление колонки updated_at в users если её нет
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        print("✅ Добавлена колонка updated_at в таблицу users")
     except sqlite3.OperationalError:
         # Колонка уже существует
         pass
