@@ -144,11 +144,18 @@ def show_user_info():
     if 'authenticated' in st.session_state and st.session_state['authenticated']:
         with st.sidebar:
             st.markdown("---")
-            st.markdown(f"👤 **Пользователь:** {st.session_state['name']}")
-            st.markdown(f"🔑 **Уровень доступа:** {st.session_state['access_level']}")
+            st.markdown(f"**Пользователь:** {st.session_state['name']}")
+            st.markdown(f"**Уровень доступа:** {st.session_state['access_level']}")
             
-            if st.button("🚪 Выход", key="logout_button_v2"):
-                logout()
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Смена пароля", key="change_password_button"):
+                    st.session_state['show_change_password'] = True
+                    st.rerun()
+            
+            with col2:
+                if st.button("Выход", key="logout_button_v2"):
+                    logout()
 
 def get_status_color(status):
     """Получить цвет для статуса приема"""
