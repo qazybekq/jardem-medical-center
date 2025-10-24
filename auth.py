@@ -87,7 +87,7 @@ def authenticate_user(username, password):
     user = cursor.fetchone()
     conn.close()
     
-    if user and bcrypt.checkpw(password.encode('utf-8'), user[2].encode('utf-8')):
+    if user and user[2] and bcrypt.checkpw(password.encode('utf-8'), user[2].encode('utf-8')):
         # Сохраняем данные пользователя в session_state
         st.session_state['authenticated'] = True
         st.session_state['user_id'] = user[0]
