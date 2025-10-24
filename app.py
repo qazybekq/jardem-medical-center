@@ -37,11 +37,17 @@ def main():
         from migrate_database import migrate_database
         migrate_database()
     except Exception as e:
-        st.error(f"❌ Ошибка миграции базы данных: {e}")
+        st.error(f"Ошибка миграции базы данных: {e}")
     
     # Проверяем аутентификацию
     if 'authenticated' not in st.session_state or not st.session_state['authenticated']:
         login_page()
+        return
+    
+    # Проверяем, нужно ли показать форму смены пароля
+    if st.session_state.get('show_change_password', False):
+        from change_password import main as change_password_main
+        change_password_main()
         return
     
     # Получаем уровень доступа пользователя
