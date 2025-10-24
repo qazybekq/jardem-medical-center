@@ -32,6 +32,13 @@ def main():
         migrate_old_appointments()
         st.session_state['db_initialized'] = True
     
+    # Выполняем миграции при каждом запуске для обеспечения совместимости
+    try:
+        from migrate_database import migrate_database
+        migrate_database()
+    except Exception as e:
+        st.error(f"❌ Ошибка миграции базы данных: {e}")
+    
     # Проверяем аутентификацию
     if 'authenticated' not in st.session_state or not st.session_state['authenticated']:
         login_page()
