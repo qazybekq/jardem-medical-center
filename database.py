@@ -908,13 +908,17 @@ def get_all_users():
             st.error(f"❌ Ошибка получения пользователей: {e}")
         return []
 
-def create_user(username, password, access_level):
+def create_user(username, password, access_level, name=None):
     """Создать нового пользователя"""
     try:
         import bcrypt
         
         # Хешируем пароль
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        # Если имя не указано, используем username
+        if name is None:
+            name = username
         
         conn = get_connection()
         cursor = conn.cursor()
@@ -927,9 +931,9 @@ def create_user(username, password, access_level):
         
         # Создаем пользователя
         cursor.execute('''
-            INSERT INTO users (username, password_hash, access_level, created_at)
-            VALUES (?, ?, ?, datetime('now'))
-        ''', (username, hashed_password, access_level))
+            INSERT INTO users (username, password_hash, name, access_level, created_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+        ''', (username, hashed_password, name, access_level))
         
         conn.commit()
         user_id = cursor.lastrowid

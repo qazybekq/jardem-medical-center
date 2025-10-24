@@ -114,6 +114,12 @@ def show_create_user_form():
                 help="Уникальное имя для входа в систему"
             )
             
+            name = st.text_input(
+                "👤 Полное имя",
+                placeholder="Введите полное имя пользователя",
+                help="Отображаемое имя пользователя"
+            )
+            
             access_level = st.selectbox(
                 "🔐 Уровень доступа",
                 ["crm", "admin", "owner"],
@@ -144,7 +150,7 @@ def show_create_user_form():
             elif len(password) < 8:
                 st.error("❌ Пароль должен содержать минимум 8 символов")
             else:
-                success, message = create_user(username, password, access_level)
+                success, message = create_user(username, password, access_level, name)
                 
                 if success:
                     # Логируем действие
