@@ -233,17 +233,33 @@ def create_default_users():
         conn.close()
         return
     
-    # Получаем пароли из переменных окружения или используем значения по умолчанию
+    # Получаем пароли из переменных окружения
     # ⚠️ В продакшене ОБЯЗАТЕЛЬНО установите переменные окружения!
-    owner_password = os.getenv('OWNER_PASSWORD', 'owner123')
-    admin_password = os.getenv('ADMIN_PASSWORD', 'admin123')
-    crm_password = os.getenv('CRM_PASSWORD', 'crm123')
+    # Для локальной разработки можно использовать значения по умолчанию
+    is_production = os.getenv('ENVIRONMENT', '').lower() == 'production'
     
-    # Предупреждаем если используются пароли по умолчанию
-    if os.getenv('OWNER_PASSWORD') is None or os.getenv('ADMIN_PASSWORD') is None:
-        if hasattr(st, 'warning'):
-            st.warning("⚠️ ВНИМАНИЕ: Используются пароли по умолчанию! Установите переменные окружения OWNER_PASSWORD, ADMIN_PASSWORD, CRM_PASSWORD")
-        print("⚠️ SECURITY WARNING: Using default passwords! Set environment variables in production!")
+    if is_production:
+        # В production требуем переменные окружения
+        owner_password = os.getenv('OWNER_PASSWORD')
+        admin_password = os.getenv('ADMIN_PASSWORD')
+        crm_password = os.getenv('CRM_PASSWORD')
+        
+        if not owner_password or not admin_password or not crm_password:
+            error_msg = "❌ SECURITY ERROR: Production passwords not set! Set OWNER_PASSWORD, ADMIN_PASSWORD, CRM_PASSWORD environment variables."
+            if hasattr(st, 'error'):
+                st.error(error_msg)
+            print(error_msg)
+            raise ValueError("Production passwords must be set via environment variables")
+    else:
+        # Для разработки используем безопасные пароли по умолчанию
+        owner_password = os.getenv('OWNER_PASSWORD', 'Owner@Secure2024!Dev')
+        admin_password = os.getenv('ADMIN_PASSWORD', 'Admin@Secure2024!Dev')
+        crm_password = os.getenv('CRM_PASSWORD', 'Crm@Secure2024!Dev')
+        
+        if os.getenv('OWNER_PASSWORD') is None:
+            if hasattr(st, 'warning'):
+                st.warning("⚠️ ВНИМАНИЕ: Используются пароли по умолчанию для разработки! В production установите переменные окружения.")
+            print("⚠️ SECURITY WARNING: Using default development passwords! Set environment variables in production!")
     
     # Создаем пользователей
     users = [

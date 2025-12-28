@@ -61,3 +61,5 @@ test_*.py
 
 # Generated passwords
 generated_passwords.txt
+production_passwords.txt
+PRODUCTION_PASSWORDS.md
