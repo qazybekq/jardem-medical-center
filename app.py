@@ -28,8 +28,11 @@ def main():
         # Пытаемся получить последнюю версию базы данных из Git
         try:
             from git_sync import pull_database_from_git
-            if pull_database_from_git():
-                st.info("📥 База данных обновлена из Git")
+            pull_result = pull_database_from_git()
+            if pull_result:
+                st.success("📥 База данных обновлена из Git")
+            else:
+                st.info("ℹ️ База данных не обновлена из Git (возможно, нет изменений)")
         except Exception as e:
             st.warning(f"⚠️ Не удалось обновить базу данных из Git: {e}")
         
@@ -40,12 +43,16 @@ def main():
         migrate_old_appointments()
         st.session_state['db_initialized'] = True
         
-        # Синхронизируем начальное состояние с Git
+        # Синхронизируем начальное состояние с Git (синхронно для надежности)
         try:
-            from git_sync import sync_database_to_git_async
-            sync_database_to_git_async("Initial database setup", push=True)
+            from git_sync import sync_database_to_git_sync
+            sync_result = sync_database_to_git_sync("Initial database setup", push=True)
+            if sync_result:
+                st.success("✅ База данных синхронизирована с Git")
+            else:
+                st.warning("⚠️ Не удалось синхронизировать базу данных с Git")
         except Exception as e:
-            pass  # Игнорируем ошибки при первом запуске
+            st.warning(f"⚠️ Ошибка синхронизации с Git: {e}")
     
     # Выполняем миграции при каждом запуске для обеспечения совместимости
     try:

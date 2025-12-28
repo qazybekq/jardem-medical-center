@@ -86,16 +86,31 @@ def is_git_repo():
 def git_add_and_commit(message="Auto-commit: Database update"):
     """Добавить изменения в Git и создать коммит"""
     if not GIT_SYNC_ENABLED:
+        print("Git sync is disabled, skipping commit")
         return False
     
     if not is_git_repo():
+        print("Not a git repository, skipping commit")
+        return False
+    
+    if not os.path.exists(DB_FILE):
+        print(f"Database file {DB_FILE} not found, skipping commit")
         return False
     
     try:
         # Настройка Git
         setup_git_config()
         
+        # Проверяем статус перед добавлением
+        result = subprocess.run(
+            ['git', 'status', '--porcelain', DB_FILE],
+            capture_output=True,
+            timeout=5,
+            text=True
+        )
+        
         # Добавляем файл базы данных
+        print(f"Adding {DB_FILE} to git...")
         result = subprocess.run(
             ['git', 'add', DB_FILE],
             capture_output=True,
@@ -104,7 +119,7 @@ def git_add_and_commit(message="Auto-commit: Database update"):
         )
         
         if result.returncode != 0:
-            print(f"Git add failed: {result.stderr}")
+            print(f"❌ Git add failed: {result.stderr}")
             return False
         
         # Проверяем, есть ли изменения для коммита
@@ -115,13 +130,15 @@ def git_add_and_commit(message="Auto-commit: Database update"):
         )
         
         if result.returncode == 0:
-            # Нет изменений
+            # Нет изменений в staged area
+            print("No changes to commit (file unchanged)")
             return True
         
         # Создаем коммит
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         commit_message = f"{message} - {timestamp}"
         
+        print(f"Committing changes: {commit_message}")
         result = subprocess.run(
             ['git', 'commit', '-m', commit_message],
             capture_output=True,
@@ -130,25 +147,31 @@ def git_add_and_commit(message="Auto-commit: Database update"):
         )
         
         if result.returncode != 0:
-            print(f"Git commit failed: {result.stderr}")
+            error_msg = result.stderr or result.stdout
+            print(f"❌ Git commit failed: {error_msg}")
             return False
         
+        print(f"✅ Git commit successful: {commit_message}")
         return True
         
     except subprocess.TimeoutExpired:
-        print("Git operation timed out")
+        print("❌ Git operation timed out")
         return False
     except Exception as e:
-        print(f"Git commit error: {e}")
+        print(f"❌ Git commit error: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
 def git_push():
     """Отправить изменения в удаленный репозиторий"""
     if not GIT_SYNC_ENABLED:
+        print("Git sync is disabled, skipping push")
         return False
     
     if not is_git_repo():
+        print("Not a git repository, skipping push")
         return False
     
     try:
@@ -168,20 +191,48 @@ def git_push():
             return False
         
         current_branch = result.stdout.strip()
+        print(f"Current branch: {current_branch}")
+        
+        # Проверяем, есть ли что коммитить
+        result = subprocess.run(
+            ['git', 'status', '--porcelain'],
+            capture_output=True,
+            timeout=5,
+            text=True
+        )
+        
+        if result.returncode == 0 and not result.stdout.strip():
+            # Нет изменений для коммита
+            print("No changes to commit")
+            # Но все равно проверяем, есть ли что пушить
+            result = subprocess.run(
+                ['git', 'log', '--oneline', f'{GIT_REMOTE}/{current_branch}..HEAD'],
+                capture_output=True,
+                timeout=5,
+                text=True
+            )
+            if not result.stdout.strip():
+                print("Nothing to push")
+                return True
         
         # Сначала делаем pull, чтобы избежать конфликтов
+        print("Pulling latest changes...")
         try:
             pull_result = subprocess.run(
-                ['git', 'pull', GIT_REMOTE, current_branch, '--no-edit', '--no-rebase'],
+                ['git', 'pull', GIT_REMOTE, current_branch, '--no-edit', '--no-rebase', '--no-ff'],
                 capture_output=True,
                 timeout=20,
                 text=True
             )
-            # Игнорируем ошибки pull (может быть, если нет изменений)
-        except:
-            pass
+            if pull_result.returncode != 0:
+                print(f"Pull warning: {pull_result.stderr}")
+            else:
+                print("Pull successful")
+        except Exception as e:
+            print(f"Pull error (continuing anyway): {e}")
         
         # Пушим изменения
+        print(f"Pushing to {GIT_REMOTE}/{current_branch}...")
         result = subprocess.run(
             ['git', 'push', GIT_REMOTE, current_branch],
             capture_output=True,
@@ -191,20 +242,20 @@ def git_push():
         
         if result.returncode != 0:
             error_msg = result.stderr or result.stdout
-            print(f"Git push failed: {error_msg}")
-            # Пробуем с force, если это безопасно (только для main ветки)
-            if current_branch == 'main':
-                # Не используем force, это опасно
-                pass
+            print(f"❌ Git push failed: {error_msg}")
+            print(f"Return code: {result.returncode}")
             return False
         
+        print(f"✅ Git push successful!")
         return True
         
     except subprocess.TimeoutExpired:
-        print("Git push timed out")
+        print("❌ Git push timed out")
         return False
     except Exception as e:
-        print(f"Git push error: {e}")
+        print(f"❌ Git push error: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
