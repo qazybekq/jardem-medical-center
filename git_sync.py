@@ -411,12 +411,18 @@ def pull_database_from_git():
         # Настройка Git
         setup_git_config()
         
+        # Настраиваем окружение для Git операций
+        env = os.environ.copy()
+        env['GIT_TERMINAL_PROMPT'] = '0'
+        env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        
         # Получаем изменения из удаленного репозитория
         result = subprocess.run(
             ['git', 'pull', GIT_REMOTE, GIT_BRANCH, '--no-edit'],
             capture_output=True,
             timeout=30,
-            text=True
+            text=True,
+            env=env
         )
         
         if result.returncode != 0:
