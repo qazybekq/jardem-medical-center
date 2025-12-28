@@ -130,12 +130,21 @@ def setup_git_config():
                 if not github_token and STREAMLIT_AVAILABLE:
                     try:
                         if hasattr(st, 'secrets'):
-                            # Проверяем наличие secrets
-                            secrets_dict = dict(st.secrets) if hasattr(st.secrets, '__iter__') else {}
-                            if 'GITHUB_TOKEN' in secrets_dict:
-                                github_token = str(secrets_dict['GITHUB_TOKEN']).strip()
-                            elif hasattr(st.secrets, 'get'):
-                                github_token = str(st.secrets.get('GITHUB_TOKEN', '')).strip()
+                            # Пробуем разные способы доступа к secrets
+                            try:
+                                # Способ 1: Прямой доступ через st.secrets['GITHUB_TOKEN']
+                                github_token = str(st.secrets['GITHUB_TOKEN']).strip()
+                            except (KeyError, AttributeError, TypeError):
+                                try:
+                                    # Способ 2: Через get метод
+                                    github_token = str(st.secrets.get('GITHUB_TOKEN', '')).strip()
+                                except (AttributeError, TypeError):
+                                    try:
+                                        # Способ 3: Через dict конвертацию
+                                        secrets_dict = dict(st.secrets) if hasattr(st.secrets, '__iter__') else {}
+                                        github_token = str(secrets_dict.get('GITHUB_TOKEN', '')).strip()
+                                    except Exception:
+                                        github_token = None
                             
                             if github_token:
                                 # Удаляем кавычки, если они есть (Streamlit может их добавить)
@@ -143,10 +152,21 @@ def setup_git_config():
                                     github_token = github_token[1:-1]
                                 elif github_token.startswith("'") and github_token.endswith("'"):
                                     github_token = github_token[1:-1]
-                                if github_token:
+                                if github_token and len(github_token) > 10:  # Минимальная длина токена
                                     print(f"✅ GitHub token found in Streamlit secrets")
+                                else:
+                                    print(f"⚠️ GITHUB_TOKEN found but appears to be empty or invalid")
+                                    github_token = None
                             else:
-                                print(f"⚠️ GITHUB_TOKEN not found in Streamlit secrets")
+                                # Диагностика: проверяем, какие ключи доступны в secrets
+                                try:
+                                    if hasattr(st.secrets, 'keys'):
+                                        available_keys = list(st.secrets.keys())
+                                        print(f"⚠️ GITHUB_TOKEN not found. Available secrets keys: {available_keys}")
+                                    else:
+                                        print(f"⚠️ GITHUB_TOKEN not found in Streamlit secrets")
+                                except Exception:
+                                    print(f"⚠️ GITHUB_TOKEN not found in Streamlit secrets")
                     except Exception as e:
                         print(f"Warning: Could not read GITHUB_TOKEN from secrets: {e}")
                         import traceback
@@ -368,12 +388,21 @@ def git_push():
         if not github_token and STREAMLIT_AVAILABLE:
             try:
                 if hasattr(st, 'secrets'):
-                    # Проверяем наличие secrets
-                    secrets_dict = dict(st.secrets) if hasattr(st.secrets, '__iter__') else {}
-                    if 'GITHUB_TOKEN' in secrets_dict:
-                        github_token = str(secrets_dict['GITHUB_TOKEN']).strip()
-                    elif hasattr(st.secrets, 'get'):
-                        github_token = str(st.secrets.get('GITHUB_TOKEN', '')).strip()
+                    # Пробуем разные способы доступа к secrets
+                    try:
+                        # Способ 1: Прямой доступ через st.secrets['GITHUB_TOKEN']
+                        github_token = str(st.secrets['GITHUB_TOKEN']).strip()
+                    except (KeyError, AttributeError, TypeError):
+                        try:
+                            # Способ 2: Через get метод
+                            github_token = str(st.secrets.get('GITHUB_TOKEN', '')).strip()
+                        except (AttributeError, TypeError):
+                            try:
+                                # Способ 3: Через dict конвертацию
+                                secrets_dict = dict(st.secrets) if hasattr(st.secrets, '__iter__') else {}
+                                github_token = str(secrets_dict.get('GITHUB_TOKEN', '')).strip()
+                            except Exception:
+                                github_token = None
                     
                     if github_token:
                         # Удаляем кавычки, если они есть (Streamlit может их добавить)
@@ -381,10 +410,21 @@ def git_push():
                             github_token = github_token[1:-1]
                         elif github_token.startswith("'") and github_token.endswith("'"):
                             github_token = github_token[1:-1]
-                        if github_token:
+                        if github_token and len(github_token) > 10:  # Минимальная длина токена
                             print(f"✅ GitHub token found in Streamlit secrets")
+                        else:
+                            print(f"⚠️ GITHUB_TOKEN found but appears to be empty or invalid")
+                            github_token = None
                     else:
-                        print(f"⚠️ GITHUB_TOKEN not found in Streamlit secrets")
+                        # Диагностика: проверяем, какие ключи доступны в secrets
+                        try:
+                            if hasattr(st.secrets, 'keys'):
+                                available_keys = list(st.secrets.keys())
+                                print(f"⚠️ GITHUB_TOKEN not found. Available secrets keys: {available_keys}")
+                            else:
+                                print(f"⚠️ GITHUB_TOKEN not found in Streamlit secrets")
+                        except Exception:
+                            print(f"⚠️ GITHUB_TOKEN not found in Streamlit secrets")
             except Exception as e:
                 print(f"Warning: Could not read GITHUB_TOKEN from secrets: {e}")
                 import traceback
