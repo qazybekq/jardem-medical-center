@@ -433,7 +433,7 @@ def git_push():
         if github_token:
             # Используем токен для аутентификации
             env['GIT_ASKPASS'] = 'echo'
-            # Обновляем remote URL с токеном если нужно
+            # Обновляем remote URL с токеном (всегда обновляем, чтобы использовать актуальный токен)
             try:
                 result_url = subprocess.run(
                     ['git', 'remote', 'get-url', GIT_REMOTE],
@@ -443,17 +443,30 @@ def git_push():
                 )
                 if result_url.returncode == 0:
                     current_remote_url = result_url.stdout.strip()
-                    # Проверяем, есть ли уже токен в URL
-                    url_has_token = '@' in current_remote_url.split('//')[1] if '//' in current_remote_url else False
-                    
-                    if 'github.com' in current_remote_url and not url_has_token:
-                        # Добавляем токен в URL
-                        if current_remote_url.startswith('https://'):
-                            new_url = current_remote_url.replace('https://', f'https://{github_token}@')
-                        elif current_remote_url.startswith('http://'):
-                            new_url = current_remote_url.replace('http://', f'http://{github_token}@')
+                    # Удаляем старый токен из URL если есть
+                    if '@' in current_remote_url and 'github.com' in current_remote_url:
+                        # Извлекаем чистый URL без токена
+                        if 'https://' in current_remote_url:
+                            clean_url = current_remote_url.split('@')[-1] if '@' in current_remote_url else current_remote_url.replace('https://', '')
+                            if not clean_url.startswith('https://'):
+                                clean_url = f"https://{clean_url}"
+                        elif 'http://' in current_remote_url:
+                            clean_url = current_remote_url.split('@')[-1] if '@' in current_remote_url else current_remote_url.replace('http://', '')
+                            if not clean_url.startswith('http://'):
+                                clean_url = f"http://{clean_url}"
                         else:
-                            new_url = current_remote_url
+                            clean_url = current_remote_url
+                    else:
+                        clean_url = current_remote_url
+                    
+                    # Добавляем новый токен в URL
+                    if 'github.com' in clean_url:
+                        if clean_url.startswith('https://'):
+                            new_url = clean_url.replace('https://', f'https://{github_token}@')
+                        elif clean_url.startswith('http://'):
+                            new_url = clean_url.replace('http://', f'http://{github_token}@')
+                        else:
+                            new_url = f"https://{github_token}@{clean_url}"
                         
                         print(f"Updating remote URL with token authentication")
                         result_set = subprocess.run(
@@ -466,10 +479,10 @@ def git_push():
                             print(f"✅ Remote URL updated with token")
                         else:
                             print(f"Warning: Could not update remote URL: {result_set.stderr}")
-                    elif url_has_token:
-                        print(f"✅ Remote URL already has token")
             except Exception as e:
                 print(f"Warning: Could not update remote URL: {e}")
+                import traceback
+                traceback.print_exc()
         
         # Пробуем push с HTTPS аутентификацией
         result = subprocess.run(
