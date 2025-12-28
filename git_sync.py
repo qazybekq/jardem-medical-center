@@ -411,9 +411,14 @@ def git_push():
                         elif github_token.startswith("'") and github_token.endswith("'"):
                             github_token = github_token[1:-1]
                         if github_token and len(github_token) > 10:  # Минимальная длина токена
-                            print(f"✅ GitHub token found in Streamlit secrets")
+                            # Проверяем формат токена (должен начинаться с ghp_)
+                            if github_token.startswith('ghp_'):
+                                print(f"✅ GitHub token found in Streamlit secrets (length: {len(github_token)})")
+                            else:
+                                print(f"⚠️ GITHUB_TOKEN found but format may be incorrect (should start with 'ghp_')")
+                                print(f"   Token starts with: {github_token[:4]}...")
                         else:
-                            print(f"⚠️ GITHUB_TOKEN found but appears to be empty or invalid")
+                            print(f"⚠️ GITHUB_TOKEN found but appears to be empty or invalid (length: {len(github_token) if github_token else 0})")
                             github_token = None
                     else:
                         # Диагностика: проверяем, какие ключи доступны в secrets
