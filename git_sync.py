@@ -358,6 +358,11 @@ def git_push():
             try:
                 if hasattr(st, 'secrets') and 'GITHUB_TOKEN' in st.secrets:
                     github_token = str(st.secrets['GITHUB_TOKEN']).strip()
+                    # Удаляем кавычки, если они есть (Streamlit может их добавить)
+                    if github_token.startswith('"') and github_token.endswith('"'):
+                        github_token = github_token[1:-1]
+                    elif github_token.startswith("'") and github_token.endswith("'"):
+                        github_token = github_token[1:-1]
                     if github_token:
                         print(f"✅ GitHub token found in Streamlit secrets")
             except Exception as e:
