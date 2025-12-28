@@ -52,6 +52,7 @@ if STREAMLIT_AVAILABLE:
 def setup_git_config():
     """Настройка Git конфигурации"""
     try:
+        # Настройка пользователя
         subprocess.run(
             ['git', 'config', 'user.name', GIT_USER_NAME],
             check=True,
@@ -64,6 +65,39 @@ def setup_git_config():
             capture_output=True,
             timeout=5
         )
+        
+        # Отключаем проверку SSH ключей для Streamlit Cloud
+        subprocess.run(
+            ['git', 'config', '--global', 'core.sshCommand', 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'],
+            capture_output=True,
+            timeout=5
+        )
+        
+        # Настраиваем URL для использования HTTPS вместо SSH
+        try:
+            result = subprocess.run(
+                ['git', 'remote', 'get-url', GIT_REMOTE],
+                capture_output=True,
+                timeout=5,
+                text=True
+            )
+            if result.returncode == 0:
+                current_url = result.stdout.strip()
+                # Если используется SSH URL, конвертируем в HTTPS
+                if current_url.startswith('git@'):
+                    # Конвертируем git@github.com:user/repo.git в https://github.com/user/repo.git
+                    https_url = current_url.replace('git@github.com:', 'https://github.com/').replace('.git', '') + '.git'
+                    print(f"Converting SSH URL to HTTPS: {https_url}")
+                    subprocess.run(
+                        ['git', 'remote', 'set-url', GIT_REMOTE, https_url],
+                        check=True,
+                        capture_output=True,
+                        timeout=5
+                    )
+                    print(f"✅ Remote URL updated to HTTPS")
+        except Exception as e:
+            print(f"Warning: Could not update remote URL: {e}")
+        
         return True
     except Exception as e:
         print(f"Warning: Could not setup git config: {e}")
@@ -218,14 +252,21 @@ def git_push():
         # Сначала делаем pull, чтобы избежать конфликтов
         print("Pulling latest changes...")
         try:
+            # Используем GIT_TERMINAL_PROMPT=0 для автоматической аутентификации
+            env = os.environ.copy()
+            env['GIT_TERMINAL_PROMPT'] = '0'
+            env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+            
             pull_result = subprocess.run(
                 ['git', 'pull', GIT_REMOTE, current_branch, '--no-edit', '--no-rebase', '--no-ff'],
                 capture_output=True,
                 timeout=20,
-                text=True
+                text=True,
+                env=env
             )
             if pull_result.returncode != 0:
                 print(f"Pull warning: {pull_result.stderr}")
+                # Если pull не удался, продолжаем - возможно, нет изменений
             else:
                 print("Pull successful")
         except Exception as e:
@@ -233,17 +274,31 @@ def git_push():
         
         # Пушим изменения
         print(f"Pushing to {GIT_REMOTE}/{current_branch}...")
+        
+        # Настраиваем окружение для Git операций
+        env = os.environ.copy()
+        env['GIT_TERMINAL_PROMPT'] = '0'
+        env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        
+        # Пробуем push с HTTPS аутентификацией
         result = subprocess.run(
             ['git', 'push', GIT_REMOTE, current_branch],
             capture_output=True,
             timeout=30,
-            text=True
+            text=True,
+            env=env
         )
         
         if result.returncode != 0:
             error_msg = result.stderr or result.stdout
             print(f"❌ Git push failed: {error_msg}")
             print(f"Return code: {result.returncode}")
+            
+            # Если ошибка связана с аутентификацией, пробуем использовать credential helper
+            if 'authentication' in error_msg.lower() or 'access' in error_msg.lower():
+                print("⚠️ Authentication issue detected. Streamlit Cloud should use GitHub token automatically.")
+                print("💡 Make sure the repository is connected to Streamlit Cloud properly.")
+            
             return False
         
         print(f"✅ Git push successful!")
