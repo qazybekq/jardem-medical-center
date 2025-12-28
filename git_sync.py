@@ -432,8 +432,12 @@ def git_push():
         
         if github_token:
             # Используем токен для аутентификации
+            # Вместо добавления токена в URL, используем переменную окружения
+            # Это более безопасный и надежный способ
             env['GIT_ASKPASS'] = 'echo'
-            # Обновляем remote URL с токеном (всегда обновляем, чтобы использовать актуальный токен)
+            env['GITHUB_TOKEN'] = github_token
+            
+            # Также пробуем обновить remote URL с токеном для совместимости
             try:
                 result_url = subprocess.run(
                     ['git', 'remote', 'get-url', GIT_REMOTE],
@@ -446,27 +450,24 @@ def git_push():
                     # Удаляем старый токен из URL если есть
                     if '@' in current_remote_url and 'github.com' in current_remote_url:
                         # Извлекаем чистый URL без токена
-                        if 'https://' in current_remote_url:
-                            clean_url = current_remote_url.split('@')[-1] if '@' in current_remote_url else current_remote_url.replace('https://', '')
-                            if not clean_url.startswith('https://'):
-                                clean_url = f"https://{clean_url}"
-                        elif 'http://' in current_remote_url:
-                            clean_url = current_remote_url.split('@')[-1] if '@' in current_remote_url else current_remote_url.replace('http://', '')
-                            if not clean_url.startswith('http://'):
-                                clean_url = f"http://{clean_url}"
+                        url_parts = current_remote_url.split('@')
+                        if len(url_parts) > 1:
+                            clean_url = 'https://' + url_parts[-1] if not url_parts[-1].startswith('http') else url_parts[-1]
                         else:
                             clean_url = current_remote_url
                     else:
                         clean_url = current_remote_url
                     
-                    # Добавляем новый токен в URL
+                    # Убеждаемся, что URL правильный формат
+                    if not clean_url.startswith('http'):
+                        if 'github.com' in clean_url:
+                            clean_url = f"https://{clean_url}"
+                    
+                    # Добавляем новый токен в URL (формат: https://token@github.com/user/repo.git)
                     if 'github.com' in clean_url:
-                        if clean_url.startswith('https://'):
-                            new_url = clean_url.replace('https://', f'https://{github_token}@')
-                        elif clean_url.startswith('http://'):
-                            new_url = clean_url.replace('http://', f'http://{github_token}@')
-                        else:
-                            new_url = f"https://{github_token}@{clean_url}"
+                        # Удаляем https:// если есть
+                        repo_path = clean_url.replace('https://', '').replace('http://', '')
+                        new_url = f"https://{github_token}@{repo_path}"
                         
                         print(f"Updating remote URL with token authentication")
                         result_set = subprocess.run(
@@ -477,6 +478,15 @@ def git_push():
                         )
                         if result_set.returncode == 0:
                             print(f"✅ Remote URL updated with token")
+                            # Проверяем, что URL обновился правильно
+                            verify_url = subprocess.run(
+                                ['git', 'remote', 'get-url', GIT_REMOTE],
+                                capture_output=True,
+                                timeout=5,
+                                text=True
+                            )
+                            if verify_url.returncode == 0:
+                                print(f"✅ Verified: Remote URL is {verify_url.stdout.strip()[:50]}...")
                         else:
                             print(f"Warning: Could not update remote URL: {result_set.stderr}")
             except Exception as e:
