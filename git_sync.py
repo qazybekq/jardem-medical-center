@@ -356,17 +356,28 @@ def git_push():
         # Если не найден в переменных окружения, проверяем Streamlit secrets
         if not github_token and STREAMLIT_AVAILABLE:
             try:
-                if hasattr(st, 'secrets') and 'GITHUB_TOKEN' in st.secrets:
-                    github_token = str(st.secrets['GITHUB_TOKEN']).strip()
-                    # Удаляем кавычки, если они есть (Streamlit может их добавить)
-                    if github_token.startswith('"') and github_token.endswith('"'):
-                        github_token = github_token[1:-1]
-                    elif github_token.startswith("'") and github_token.endswith("'"):
-                        github_token = github_token[1:-1]
+                if hasattr(st, 'secrets'):
+                    # Проверяем наличие secrets
+                    secrets_dict = dict(st.secrets) if hasattr(st.secrets, '__iter__') else {}
+                    if 'GITHUB_TOKEN' in secrets_dict:
+                        github_token = str(secrets_dict['GITHUB_TOKEN']).strip()
+                    elif hasattr(st.secrets, 'get'):
+                        github_token = str(st.secrets.get('GITHUB_TOKEN', '')).strip()
+                    
                     if github_token:
-                        print(f"✅ GitHub token found in Streamlit secrets")
+                        # Удаляем кавычки, если они есть (Streamlit может их добавить)
+                        if github_token.startswith('"') and github_token.endswith('"'):
+                            github_token = github_token[1:-1]
+                        elif github_token.startswith("'") and github_token.endswith("'"):
+                            github_token = github_token[1:-1]
+                        if github_token:
+                            print(f"✅ GitHub token found in Streamlit secrets")
+                    else:
+                        print(f"⚠️ GITHUB_TOKEN not found in Streamlit secrets")
             except Exception as e:
                 print(f"Warning: Could not read GITHUB_TOKEN from secrets: {e}")
+                import traceback
+                traceback.print_exc()
         
         if github_token:
             # Используем токен для аутентификации

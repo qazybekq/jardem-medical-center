@@ -4,6 +4,7 @@
 """
 
 import streamlit as st
+from timezone_utils import get_local_today, get_local_now
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
