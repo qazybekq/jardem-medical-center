@@ -464,6 +464,15 @@ def create_client(first_name, last_name, birth_date, phone, email=None):
         conn.commit()
         conn.close()
         
+        # Синхронизируем с Git (синхронно для надежности)
+        if GIT_SYNC_AVAILABLE:
+            try:
+                result = sync_database_to_git_sync("Auto-commit: Added new client", push=True)
+                if not result:
+                    print("⚠️ Git sync failed for new client - data may be lost on restart")
+            except Exception as e:
+                print(f"⚠️ Git sync error for new client: {e}")
+        
         return client_id
     except sqlite3.IntegrityError as e:
         conn.close()
