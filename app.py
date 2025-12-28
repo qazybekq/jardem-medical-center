@@ -25,12 +25,27 @@ def main():
     
     # Инициализация базы данных при первом запуске
     if 'db_initialized' not in st.session_state:
+        # Пытаемся получить последнюю версию базы данных из Git
+        try:
+            from git_sync import pull_database_from_git
+            if pull_database_from_git():
+                st.info("📥 База данных обновлена из Git")
+        except Exception as e:
+            st.warning(f"⚠️ Не удалось обновить базу данных из Git: {e}")
+        
         init_database()
         create_default_users()
         create_default_data()
         # Миграция старых приемов в новую структуру
         migrate_old_appointments()
         st.session_state['db_initialized'] = True
+        
+        # Синхронизируем начальное состояние с Git
+        try:
+            from git_sync import sync_database_to_git_async
+            sync_database_to_git_async("Initial database setup", push=True)
+        except Exception as e:
+            pass  # Игнорируем ошибки при первом запуске
     
     # Выполняем миграции при каждом запуске для обеспечения совместимости
     try:

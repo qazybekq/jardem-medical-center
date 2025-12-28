@@ -15,8 +15,26 @@ from validators import (
     validate_date, validate_name, validate_notes, ValidationError
 )
 
+# Импорт Git синхронизации (опционально)
+try:
+    from git_sync import sync_database_to_git_async, pull_database_from_git
+    GIT_SYNC_AVAILABLE = True
+except ImportError:
+    GIT_SYNC_AVAILABLE = False
+    def sync_database_to_git_async(*args, **kwargs):
+        pass
+    def pull_database_from_git():
+        return False
+
 def init_database():
     """Инициализация базы данных версии 2.0"""
+    # Пытаемся получить последнюю версию базы данных из Git при старте
+    if GIT_SYNC_AVAILABLE:
+        try:
+            pull_database_from_git()
+        except Exception as e:
+            print(f"Could not pull database from Git: {e}")
+    
     conn = sqlite3.connect('medical_center.db')
     cursor = conn.cursor()
     
@@ -649,6 +667,10 @@ def create_appointment(client_id, doctor_id, service_id, appointment_date, appoi
         conn.commit()
         conn.close()
         
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Created new appointment")
+        
         return appointment_id
     except sqlite3.IntegrityError as e:
         conn.close()
@@ -762,6 +784,11 @@ def delete_appointment(appointment_id):
         cursor.execute('DELETE FROM appointments WHERE id = ?', (appointment_id,))
         conn.commit()
         conn.close()
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Deleted appointment")
+        
         return True
     else:
         conn.close()
@@ -804,6 +831,10 @@ def add_payment_to_service(appointment_service_id, payment_method, amount):
         conn.commit()
         payment_id = cursor.lastrowid
         conn.close()
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Added payment")
         
         return payment_id
     except Exception as e:

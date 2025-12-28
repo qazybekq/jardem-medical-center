@@ -10,10 +10,19 @@ from datetime import datetime, date
 from database import get_connection, log_audit_action
 from auth import check_access
 
+# Импорт Git синхронизации (опционально)
+try:
+    from git_sync import sync_database_to_git_async
+    GIT_SYNC_AVAILABLE = True
+except ImportError:
+    GIT_SYNC_AVAILABLE = False
+    def sync_database_to_git_async(*args, **kwargs):
+        pass
+
 def main():
     """Главная функция модуля справочников"""
-    # Проверка прав доступа
-    if not check_access(['owner', 'admin']):
+    # Проверка прав доступа - разрешаем доступ для owner, admin и crm
+    if not check_access(['owner', 'admin', 'crm']):
         st.error("У вас нет прав доступа к управлению справочниками")
         return
     
@@ -693,6 +702,11 @@ def add_client(first_name, last_name, birth_date, phone, email):
         
         # Логируем действие
         log_audit_action(st.session_state['user_id'], 'CREATE', 'clients', client_id)
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Added new client")
+        
         return True
     except Exception as e:
         st.error(f"Ошибка при добавлении клиента: {e}")
@@ -713,6 +727,11 @@ def update_client(client_id, first_name, last_name, birth_date, phone, email):
         
         # Логируем действие
         log_audit_action(st.session_state['user_id'], 'UPDATE', 'clients', client_id)
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Updated client")
+        
         return True
     except Exception as e:
         st.error(f"Ошибка при обновлении клиента: {e}")
@@ -733,6 +752,11 @@ def deactivate_client(client_id):
         
         # Логируем действие
         log_audit_action(st.session_state['user_id'], 'UPDATE', 'clients', client_id)
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Deactivated client")
+        
         return True
     except Exception as e:
         st.error(f"Ошибка при деактивации клиента: {e}")
@@ -813,6 +837,11 @@ def add_service(name, description, doctor_id, price, duration):
         
         # Логируем действие
         log_audit_action(st.session_state['user_id'], 'CREATE', 'services', service_id)
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Added new service")
+        
         return True
     except Exception as e:
         st.error(f"Ошибка при добавлении услуги: {e}")
@@ -833,6 +862,11 @@ def update_service(service_id, name, description, doctor_id, price, duration):
         
         # Логируем действие
         log_audit_action(st.session_state['user_id'], 'UPDATE', 'services', service_id)
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Updated service")
+        
         return True
     except Exception as e:
         st.error(f"Ошибка при обновлении услуги: {e}")
@@ -853,6 +887,11 @@ def deactivate_service(service_id):
         
         # Логируем действие
         log_audit_action(st.session_state['user_id'], 'UPDATE', 'services', service_id)
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Deactivated service")
+        
         return True
     except Exception as e:
         st.error(f"Ошибка при деактивации услуги: {e}")
@@ -918,6 +957,11 @@ def add_doctor(first_name, last_name, specialization, phone, email):
         
         # Логируем действие
         log_audit_action(st.session_state['user_id'], 'CREATE', 'doctors', doctor_id)
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Added new doctor")
+        
         return True
     except Exception as e:
         st.error(f"Ошибка при добавлении врача: {e}")
@@ -938,6 +982,11 @@ def update_doctor(doctor_id, first_name, last_name, specialization, phone, email
         
         # Логируем действие
         log_audit_action(st.session_state['user_id'], 'UPDATE', 'doctors', doctor_id)
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Updated doctor")
+        
         return True
     except Exception as e:
         st.error(f"Ошибка при обновлении врача: {e}")
@@ -958,6 +1007,11 @@ def deactivate_doctor(doctor_id):
         
         # Логируем действие
         log_audit_action(st.session_state['user_id'], 'UPDATE', 'doctors', doctor_id)
+        
+        # Синхронизируем с Git (асинхронно)
+        if GIT_SYNC_AVAILABLE:
+            sync_database_to_git_async("Auto-commit: Deactivated doctor")
+        
         return True
     except Exception as e:
         st.error(f"Ошибка при деактивации врача: {e}")

@@ -117,7 +117,12 @@ def logout():
     st.rerun()
 
 def check_access(required_access_level):
-    """Проверка уровня доступа"""
+    """Проверка уровня доступа
+    
+    Args:
+        required_access_level: список или строка с требуемыми уровнями доступа
+                               Например: ['owner', 'admin'] или 'crm'
+    """
     if 'authenticated' not in st.session_state or not st.session_state['authenticated']:
         return False
     
@@ -127,17 +132,25 @@ def check_access(required_access_level):
     if user_access_level == 'owner':
         return True
     
-    # Admin имеет доступ ко всему
+    # Преобразуем required_access_level в список, если это строка
+    if isinstance(required_access_level, str):
+        required_levels = [required_access_level]
+    else:
+        required_levels = required_access_level
+    
+    # Admin имеет доступ ко всему, кроме owner-специфичных функций
     if user_access_level == 'admin':
         return True
     
-    # Проверяем требуемый уровень доступа
-    if required_access_level == 'admin' and user_access_level not in ['admin', 'owner']:
-        return False
-    elif required_access_level == 'crm' and user_access_level not in ['admin', 'crm', 'owner']:
-        return False
+    # Проверяем, есть ли у пользователя один из требуемых уровней доступа
+    if user_access_level in required_levels:
+        return True
     
-    return True
+    # Специальная логика: crm имеет доступ к crm функциям
+    if 'crm' in required_levels and user_access_level == 'crm':
+        return True
+    
+    return False
 
 def show_user_info():
     """Показать информацию о пользователе в сайдбаре"""

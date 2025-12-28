@@ -26,7 +26,8 @@ env/
 ENV/
 
 # Database
-*.db
+# medical_center.db - НЕ игнорируем, чтобы синхронизировать с Git
+# *.db
 *.sqlite
 *.sqlite3
 
