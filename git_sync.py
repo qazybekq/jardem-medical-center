@@ -169,6 +169,18 @@ def git_push():
         
         current_branch = result.stdout.strip()
         
+        # Сначала делаем pull, чтобы избежать конфликтов
+        try:
+            pull_result = subprocess.run(
+                ['git', 'pull', GIT_REMOTE, current_branch, '--no-edit', '--no-rebase'],
+                capture_output=True,
+                timeout=20,
+                text=True
+            )
+            # Игнорируем ошибки pull (может быть, если нет изменений)
+        except:
+            pass
+        
         # Пушим изменения
         result = subprocess.run(
             ['git', 'push', GIT_REMOTE, current_branch],
@@ -178,8 +190,12 @@ def git_push():
         )
         
         if result.returncode != 0:
-            print(f"Git push failed: {result.stderr}")
-            # Возможно, нужно сначала pull
+            error_msg = result.stderr or result.stdout
+            print(f"Git push failed: {error_msg}")
+            # Пробуем с force, если это безопасно (только для main ветки)
+            if current_branch == 'main':
+                # Не используем force, это опасно
+                pass
             return False
         
         return True
@@ -231,13 +247,27 @@ def sync_database_to_git_async(message="Auto-commit: Database update", push=True
     
     def sync_thread():
         try:
-            sync_database_to_git(message, push)
+            result = sync_database_to_git(message, push)
+            if result:
+                print(f"✅ Git sync successful: {message}")
+            else:
+                print(f"⚠️ Git sync failed: {message}")
         except Exception as e:
-            print(f"Async git sync error: {e}")
+            print(f"❌ Async git sync error: {e}")
+            import traceback
+            traceback.print_exc()
     
     thread = threading.Thread(target=sync_thread, daemon=True)
     thread.start()
     return thread
+
+
+def sync_database_to_git_sync(message="Auto-commit: Database update", push=True):
+    """
+    Синхронная синхронизация (блокирует до завершения)
+    Используется для критических операций
+    """
+    return sync_database_to_git(message, push)
 
 
 def pull_database_from_git():

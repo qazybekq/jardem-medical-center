@@ -17,12 +17,14 @@ from validators import (
 
 # Импорт Git синхронизации (опционально)
 try:
-    from git_sync import sync_database_to_git_async, pull_database_from_git
+    from git_sync import sync_database_to_git_async, sync_database_to_git_sync, pull_database_from_git
     GIT_SYNC_AVAILABLE = True
 except ImportError:
     GIT_SYNC_AVAILABLE = False
     def sync_database_to_git_async(*args, **kwargs):
         pass
+    def sync_database_to_git_sync(*args, **kwargs):
+        return False
     def pull_database_from_git():
         return False
 
@@ -683,9 +685,14 @@ def create_appointment(client_id, doctor_id, service_id, appointment_date, appoi
         conn.commit()
         conn.close()
         
-        # Синхронизируем с Git (асинхронно)
+        # Синхронизируем с Git (синхронно для надежности - критическая операция!)
         if GIT_SYNC_AVAILABLE:
-            sync_database_to_git_async("Auto-commit: Created new appointment")
+            try:
+                result = sync_database_to_git_sync("Auto-commit: Created new appointment", push=True)
+                if not result:
+                    print("⚠️ Git sync failed for new appointment - data may be lost on restart")
+            except Exception as e:
+                print(f"⚠️ Git sync error for new appointment: {e}")
         
         return appointment_id
     except sqlite3.IntegrityError as e:
