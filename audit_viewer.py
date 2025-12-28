@@ -17,9 +17,15 @@ def main():
         st.header("🔍 Фильтры")
         
         # Период
+        try:
+            from timezone_utils import get_local_today
+            today = get_local_today()
+        except ImportError:
+            today = date.today()
+        
         date_range = st.date_input(
             "Выберите период:",
-            value=(date.today() - timedelta(days=7), date.today()),
+            value=(today - timedelta(days=7), today),
             key="audit_date_range"
         )
         

@@ -89,7 +89,12 @@ def validate_date(appointment_date):
         except ValueError:
             raise ValidationError("Неверный формат даты. Используйте: YYYY-MM-DD")
     
-    today = date.today()
+    # Используем локальный часовой пояс для определения сегодняшней даты
+    try:
+        from timezone_utils import get_local_today
+        today = get_local_today()
+    except ImportError:
+        today = date.today()
     max_future = today + timedelta(days=365)
     
     # Убрано ограничение на создание приемов в прошлом
