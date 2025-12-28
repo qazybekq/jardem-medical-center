@@ -270,17 +270,25 @@ def sync_database_to_git(message="Auto-commit: Database update", push=True):
     Returns:
         bool: Успешно ли выполнена синхронизация
     """
+    print(f"\n{'='*60}")
+    print(f"🔄 Starting Git sync: {message}")
+    print(f"{'='*60}")
+    
     if not GIT_SYNC_ENABLED:
-        print("Git sync is disabled")
+        print("❌ Git sync is disabled")
+        print(f"{'='*60}\n")
         return False
     
     if not os.path.exists(DB_FILE):
-        print(f"Database file {DB_FILE} not found")
+        print(f"❌ Database file {DB_FILE} not found")
+        print(f"{'='*60}\n")
         return False
     
     # Коммитим изменения
-    if not git_add_and_commit(message):
-        print(f"Failed to commit changes: {message}")
+    commit_success = git_add_and_commit(message)
+    if not commit_success:
+        print(f"❌ Failed to commit changes: {message}")
+        print(f"{'='*60}\n")
         return False
     
     # Пушим изменения, если требуется
@@ -290,10 +298,14 @@ def sync_database_to_git(message="Auto-commit: Database update", push=True):
         push_result = git_push()
         if push_result:
             print(f"✅ Successfully synced to Git: {message}")
+            print(f"{'='*60}\n")
         else:
             print(f"⚠️ Failed to push to Git: {message}")
+            print(f"{'='*60}\n")
         return push_result
     
+    print(f"✅ Committed (no push): {message}")
+    print(f"{'='*60}\n")
     return True
 
 
