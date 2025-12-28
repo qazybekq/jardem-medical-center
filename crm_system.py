@@ -7,6 +7,16 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, date, time, timedelta
 import hashlib
+
+# Импорт утилит для работы с часовым поясом
+try:
+    from timezone_utils import get_local_today, get_local_now
+    USE_TIMEZONE = True
+except ImportError:
+    # Если модуль не найден, используем стандартные функции
+    get_local_today = date.today
+    get_local_now = datetime.now
+    USE_TIMEZONE = False
 from database import (
     get_connection, search_clients, create_client, get_client_by_id,
     get_all_doctors, get_services_by_doctor, get_all_services, create_appointment,
@@ -184,7 +194,7 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
             else:
                 appointment_date = st.date_input(
                     "📅 Дата приема:",
-                    value=selected_date or date.today(),
+                    value=selected_date or get_local_today(),
                     key="appointment_date"
                 )
         
@@ -647,12 +657,12 @@ def show_calendar_view():
     with col5:
         if st.button("➕ Добавить прием", key="add_appointment_v2", type="primary"):
             # Открываем форму для создания нового приема
-            st.session_state['new_appointment_date'] = date.today()
+            st.session_state['new_appointment_date'] = get_local_today()
             st.session_state['new_appointment_time'] = time(9, 0)
             st.rerun()
     
     # Получаем текущую дату и смещение
-    today = date.today()
+    today = get_local_today()
     current_week_offset = st.session_state.get('current_week_offset', 0)
     view_mode = st.session_state.get('view_mode', 'week')
     

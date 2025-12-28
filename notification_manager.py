@@ -54,7 +54,11 @@ def show_send_notification():
             recipients = [selected_client]
     
     elif recipient_type == "Все клиенты с приемами на завтра":
-        tomorrow = date.today() + timedelta(days=1)
+        try:
+            from timezone_utils import get_local_today
+            tomorrow = get_local_today() + timedelta(days=1)
+        except ImportError:
+            tomorrow = date.today() + timedelta(days=1)
         recipients = get_clients_with_appointments(tomorrow)
         st.info(f"📊 Найдено клиентов: {len(recipients)}")
     

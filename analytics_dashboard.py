@@ -18,8 +18,8 @@ def main():
     user_access_level = st.session_state.get('access_level', '')
     if st.session_state.get('analytics_today_only', False) and user_access_level == 'crm':
         st.info("📅 Доступна аналитика только за сегодняшний день")
-        st.session_state['quick_filter_start'] = date.today()
-        st.session_state['quick_filter_end'] = date.today()
+        st.session_state['quick_filter_start'] = get_local_today()
+        st.session_state['quick_filter_end'] = get_local_today()
         st.session_state['active_quick_filter'] = "today"
     
     # Быстрые фильтры (над основным контентом)
@@ -39,8 +39,8 @@ def main():
     
     with col2:
         if st.button("📆 Неделя", use_container_width=True, type="primary" if active_filter == "week" else "secondary"):
-            st.session_state['quick_filter_start'] = date.today() - timedelta(days=7)
-            st.session_state['quick_filter_end'] = date.today()
+            st.session_state['quick_filter_start'] = get_local_today() - timedelta(days=7)
+            st.session_state['quick_filter_end'] = get_local_today()
             st.session_state['active_quick_filter'] = "week"
             st.rerun()
     
@@ -72,8 +72,8 @@ def main():
         st.header("🔍 Фильтры")
         
         # Период (с учётом быстрых фильтров)
-        default_start = st.session_state.get('quick_filter_start', date.today() - timedelta(days=30))
-        default_end = st.session_state.get('quick_filter_end', date.today())
+        default_start = st.session_state.get('quick_filter_start', get_local_today() - timedelta(days=30))
+        default_end = st.session_state.get('quick_filter_end', get_local_today())
         
         date_range = st.date_input(
             "Выберите период:",
