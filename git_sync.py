@@ -95,6 +95,55 @@ def setup_git_config():
                         timeout=5
                     )
                     print(f"✅ Remote URL updated to HTTPS")
+                
+                # Настраиваем credential helper для автоматической аутентификации
+                # В Streamlit Cloud используется автоматический токен
+                try:
+                    # Используем store credential helper для кеширования
+                    subprocess.run(
+                        ['git', 'config', '--global', 'credential.helper', 'store'],
+                        capture_output=True,
+                        timeout=5
+                    )
+                    # Отключаем credential helper prompt
+                    subprocess.run(
+                        ['git', 'config', '--global', 'credential.helper', 'cache'],
+                        capture_output=True,
+                        timeout=5
+                    )
+                    # Или используем env credential helper
+                    subprocess.run(
+                        ['git', 'config', '--global', 'credential.helper', ''],
+                        capture_output=True,
+                        timeout=5
+                    )
+                except:
+                    pass
+                
+                # Пробуем использовать переменные окружения для аутентификации
+                # Streamlit Cloud автоматически предоставляет GITHUB_TOKEN
+                github_token = os.getenv('GITHUB_TOKEN') or os.getenv('GH_TOKEN')
+                if github_token and 'github.com' in current_url:
+                    # Обновляем URL с токеном
+                    if not current_url.startswith('https://'):
+                        https_url = current_url.replace('git@github.com:', 'https://github.com/')
+                    else:
+                        https_url = current_url
+                    
+                    # Добавляем токен в URL (если его там еще нет)
+                    if '@' not in https_url.split('//')[1] and github_token:
+                        # Формат: https://token@github.com/user/repo.git
+                        url_parts = https_url.split('//')
+                        if len(url_parts) == 2:
+                            new_url = f"{url_parts[0]}//{github_token}@{url_parts[1]}"
+                            print(f"Updating URL with token authentication")
+                            subprocess.run(
+                                ['git', 'remote', 'set-url', GIT_REMOTE, new_url],
+                                check=True,
+                                capture_output=True,
+                                timeout=5
+                            )
+                            print(f"✅ Remote URL updated with token")
         except Exception as e:
             print(f"Warning: Could not update remote URL: {e}")
         
@@ -279,6 +328,32 @@ def git_push():
         env = os.environ.copy()
         env['GIT_TERMINAL_PROMPT'] = '0'
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        
+        # Пробуем получить GitHub token из переменных окружения
+        github_token = os.getenv('GITHUB_TOKEN') or os.getenv('GH_TOKEN')
+        if github_token:
+            # Используем токен для аутентификации
+            env['GIT_ASKPASS'] = 'echo'
+            # Обновляем remote URL с токеном если нужно
+            try:
+                result_url = subprocess.run(
+                    ['git', 'remote', 'get-url', GIT_REMOTE],
+                    capture_output=True,
+                    timeout=5,
+                    text=True
+                )
+                if result_url.returncode == 0:
+                    current_remote_url = result_url.stdout.strip()
+                    if 'github.com' in current_remote_url and '@' not in current_remote_url.split('//')[1]:
+                        # Добавляем токен в URL
+                        new_url = current_remote_url.replace('https://', f'https://{github_token}@')
+                        subprocess.run(
+                            ['git', 'remote', 'set-url', GIT_REMOTE, new_url],
+                            capture_output=True,
+                            timeout=5
+                        )
+            except:
+                pass
         
         # Пробуем push с HTTPS аутентификацией
         result = subprocess.run(
