@@ -148,6 +148,14 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
         # Выбор врача
         doctors = get_all_doctors()
         doctor_options = {f"{doc[1]} {doc[2]}": doc[0] for doc in doctors}
+        doctor_options_list = list(doctor_options.keys())
+        
+        # Находим индекс врача "C.Т. Курмангалиева" для значения по умолчанию
+        default_doctor_index = 0
+        for i, doctor_name in enumerate(doctor_options_list):
+            if "Курмангалиева" in doctor_name or "курмангалиева" in doctor_name.lower():
+                default_doctor_index = i
+                break
         
         if appointment_data:
             selected_doctor_name = f"{appointment_data[13]} {appointment_data[14]}"
@@ -155,7 +163,8 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
         else:
             selected_doctor_name = st.selectbox(
                 "👨‍⚕️ Выберите врача:",
-                options=list(doctor_options.keys()),
+                options=doctor_options_list,
+                index=default_doctor_index,
                 key="doctor_select"
             )
             selected_doctor_id = doctor_options.get(selected_doctor_name)
@@ -166,6 +175,14 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
         if selected_doctor_id:
             services = get_services_by_doctor(selected_doctor_id)
             service_options = {f"{srv[1]} ({srv[3]} KZT)": srv[0] for srv in services}
+            service_options_list = list(service_options.keys())
+            
+            # Находим индекс услуги "прием гинеколога" для значения по умолчанию
+            default_service_index = 0
+            for i, service_name in enumerate(service_options_list):
+                if "гинеколог" in service_name.lower() or "прием гинеколога" in service_name.lower():
+                    default_service_index = i
+                    break
             
             if appointment_data:
                 selected_service_name = appointment_data[16]
@@ -174,7 +191,8 @@ def show_appointment_form(appointment_id=None, selected_date=None, selected_time
                 if services:
                     selected_service_name = st.selectbox(
                         "🏥 Выберите услугу:",
-                        options=list(service_options.keys()),
+                        options=service_options_list,
+                        index=default_service_index,
                         key="service_select"
                     )
                     selected_service_id = service_options.get(selected_service_name)
