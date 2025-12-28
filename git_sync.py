@@ -120,9 +120,22 @@ def setup_git_config():
                 except:
                     pass
                 
-                # Пробуем использовать переменные окружения для аутентификации
-                # Streamlit Cloud автоматически предоставляет GITHUB_TOKEN
+                # Пробуем получить GitHub token из переменных окружения или Streamlit secrets
+                github_token = None
+                
+                # Сначала проверяем переменные окружения
                 github_token = os.getenv('GITHUB_TOKEN') or os.getenv('GH_TOKEN')
+                
+                # Если не найден в переменных окружения, проверяем Streamlit secrets
+                if not github_token and STREAMLIT_AVAILABLE:
+                    try:
+                        if hasattr(st, 'secrets') and 'GITHUB_TOKEN' in st.secrets:
+                            github_token = str(st.secrets['GITHUB_TOKEN']).strip()
+                            if github_token:
+                                print(f"✅ GitHub token found in Streamlit secrets")
+                    except Exception as e:
+                        print(f"Warning: Could not read GITHUB_TOKEN from secrets: {e}")
+                
                 if github_token and 'github.com' in current_url:
                     # Обновляем URL с токеном
                     if not current_url.startswith('https://'):
