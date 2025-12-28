@@ -381,16 +381,33 @@ def git_push():
                 )
                 if result_url.returncode == 0:
                     current_remote_url = result_url.stdout.strip()
-                    if 'github.com' in current_remote_url and '@' not in current_remote_url.split('//')[1]:
+                    # Проверяем, есть ли уже токен в URL
+                    url_has_token = '@' in current_remote_url.split('//')[1] if '//' in current_remote_url else False
+                    
+                    if 'github.com' in current_remote_url and not url_has_token:
                         # Добавляем токен в URL
-                        new_url = current_remote_url.replace('https://', f'https://{github_token}@')
-                        subprocess.run(
+                        if current_remote_url.startswith('https://'):
+                            new_url = current_remote_url.replace('https://', f'https://{github_token}@')
+                        elif current_remote_url.startswith('http://'):
+                            new_url = current_remote_url.replace('http://', f'http://{github_token}@')
+                        else:
+                            new_url = current_remote_url
+                        
+                        print(f"Updating remote URL with token authentication")
+                        result_set = subprocess.run(
                             ['git', 'remote', 'set-url', GIT_REMOTE, new_url],
                             capture_output=True,
-                            timeout=5
+                            timeout=5,
+                            text=True
                         )
-            except:
-                pass
+                        if result_set.returncode == 0:
+                            print(f"✅ Remote URL updated with token")
+                        else:
+                            print(f"Warning: Could not update remote URL: {result_set.stderr}")
+                    elif url_has_token:
+                        print(f"✅ Remote URL already has token")
+            except Exception as e:
+                print(f"Warning: Could not update remote URL: {e}")
         
         # Пробуем push с HTTPS аутентификацией
         result = subprocess.run(
